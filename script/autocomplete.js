@@ -13,7 +13,8 @@ app.directive('autocomplete', function() {
       onType: '=onType',
       onSelect: '=onSelect',
       autocompleteRequired: '=',
-      noAutoSort: '=noAutoSort'
+      noAutoSort: '=noAutoSort',
+      placeholder: '@placeholder'
     },
     controller: ['$scope', function($scope){
       // the index of the suggestions that's currently selected
@@ -123,6 +124,10 @@ app.directive('autocomplete', function() {
         if (a.indexOf('attr') === 0) {
           scope.attrs[attr] = attrs[a];
         }
+      }
+
+      if(scope.placeholder){
+        scope.attrs.placeholder = scope.placeholder;
       }
 
       if (attrs.clickActivation) {
