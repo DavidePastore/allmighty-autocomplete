@@ -14,7 +14,9 @@ app.directive('autocomplete', function() {
       onSelect: '=onSelect',
       autocompleteRequired: '=',
       noAutoSort: '=noAutoSort',
-      placeholder: '@placeholder'
+      placeholder: '@placeholder',
+      labelkey: '@labelKey',
+      valueKey: '@valueKey'
     },
     controller: ['$scope', function($scope){
       // the index of the suggestions that's currently selected
@@ -129,6 +131,53 @@ app.directive('autocomplete', function() {
       if(scope.placeholder){
         scope.attrs.placeholder = scope.placeholder;
       }
+
+      var valueOrDefault = function (value, defaultValue) {
+        return !value ? defaultValue : value;
+      };
+
+      scope.getItemValue = function (item, key) {
+          // if it's an array, go through all items and add the values to a new array and return it
+          if (angular.isArray(item)) {
+              var items = [];
+              angular.forEach(item, function (itemValue) {
+                  if (key && angular.isObject(item)) {
+                      items.push($parse(key)(itemValue));
+                  } else {
+                      items.push(itemValue);
+                  }
+              });
+              return items;
+          } else {
+              if (key && angular.isObject(item)) {
+                  return $parse(key)(item);
+              }
+          }
+          return item;
+      };
+
+      var isKeyValueInObjectArray = function (objectArray, key, value) {
+        if (angular.isArray(objectArray)) {
+          for (var i = 0; i < objectArray.length; i++) {
+            if (scope.getItemValue(objectArray[i], key) === value) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+
+      /*
+      if (!isKeyValueInObjectArray(scope.suggestions,
+              scope.valueKey, scope.getItemValue(item, scope.valueKey))) {
+
+        // create a new array to update the model. See https://github.com/angular-ui/ui-select/issues/191#issuecomment-55471732
+        scope.suggestions = scope.suggestions.concat([item]);
+      }
+      */
+
+      scope.labelKey = valueOrDefault(scope.labelKey, undefined);
+      scope.valueKey = valueOrDefault(scope.valueKey, undefined);
 
       if (attrs.clickActivation) {
         element[0].onclick = function(e){
@@ -266,7 +315,7 @@ app.directive('autocomplete', function() {
               val="{{ suggestion }}"\
               ng-class="{ active: ($index === selectedIndex) }"\
               ng-click="select(suggestion)"\
-              ng-bind-html="suggestion | highlight:searchParam"></li>\
+              ng-bind-html="getItemValue(suggestion, valueKey) | highlight:searchParam"></li>\
           </ul>\
           <ul ng-if="noAutoSort" ng-show="completing && (suggestions | filter:searchFilter).length > 0">\
             <li\
@@ -276,7 +325,7 @@ app.directive('autocomplete', function() {
               val="{{ suggestion }}"\
               ng-class="{ active: ($index === selectedIndex) }"\
               ng-click="select(suggestion)"\
-              ng-bind-html="suggestion | highlight:searchParam"></li>\
+              ng-bind-html="getItemValue(suggestion, valueKey) | highlight:searchParam"></li>\
           </ul>\
         </div>'
   };
